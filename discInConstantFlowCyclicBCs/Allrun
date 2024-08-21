@@ -1,0 +1,17 @@
+#!/bin/sh
+cd "${0%/*}" || exit                                # Run from this directory
+. ${WM_PROJECT_DIR:?}/bin/tools/RunFunctions        # Tutorial run functions
+#------------------------------------------------------------------------------
+
+restore0Dir
+
+caseName=$(basename $(dirname $(readlink -f "$0")))
+touch ${caseName}.foam
+
+runApplication blockMesh
+
+runApplication setAlphaField
+
+runApplication $(getApplication)
+
+#------------------------------------------------------------------------------

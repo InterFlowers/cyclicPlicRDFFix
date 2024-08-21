@@ -1,0 +1,66 @@
+The goal is to extend the RDF field to cells that are point neighbours to
+interface cells.
+This is complicated by the fact that point neighbour cells may live on other
+subdomains than the cell in question.
+Therefore Henning wrote the zoneDistribute class which handles this complication
+and for instance returns the point stencil of a cell with global indexing.
+The new complication is that cyclic boundaries are not treated correctly.
+The problem occurs when visiting neighbour cells and using the distance from the
+current cell centre their interface centres as weights in the calculation of the
+extended RDF. The zoneDistribute class corectly gives the interface centre for
+point neighbour cells but sometimes one of these is on the other side of a
+cyclic patch. In such cases the returned point neighbour interface centre must
+be shifted by the displacement between the two cyclic patches before the
+distance is calculated. For a given cell to which we want to extend the RDF, we
+must therefore for each cell in its stencil check if it and our current cell
+belong to a shared cyclic patch pair and if they do we must apply the
+transformPosition(centre, faceI) where faceI is the label of the face on the
+cyclic neighbour patch to which the point neighbour cell belongs.
+
+1. Go through all cyclic patches
+2. For each face on a cyclic patch, check if its owner cell, cellI, is
+   nearToInterface and not an interface cell itself.
+3. If this is the case, get cellI's point neighbour stencil.
+4. For each cell, cellJ, in the stencil check if it belongs to a cyclic patch,
+   cycPatch, where cellI belongs to its neighbour cyclic patch, neiCycPatch.
+5. If that is the case, find the face, neiFaceJ, on neiCycPatch corresponding to
+   the face faceJ to which cellJ belongs on cycPatch.
+6. transform the interface centre, Xc, using
+
+        neiCycPatch.transformPosition(Xc, faceJ)
+
+   to get the centre position as viewed from cellI's side of the cyclic
+   boundary.
+
+Ad 4.
+// Walk through all cyclic patches and all cells of these and check if cellI is
+// nearToInterface. If that is the case then do the following:
+// Walk through all point neighbour cells of cellI
+forAll(stencil[cellI], cellJ)
+{
+    // Walk through all faces of cellJ
+    const labelList& cellFaces = mesh.cells()[cellJ];
+    forAll(cellFaces, faceI)
+    {
+        // Check if faceI is on a cyclic patch
+        if (!mesh_.isInternalFace(faceI))
+        {
+            const polyBoundaryMesh& pbm = mesh_.boundaryMesh();
+            const label patchi = pbm.patchID(faceI);
+            const cyclicPolyPatch* cpp2 = isA<cyclicPolyPatch>(boundaryMesh[patchi]);
+            if (cpp2)
+            {
+                // If faceI on cyclic patch check if cellI is on the
+                // corresponding neighobur patch
+                label neiPatchID = cpp2->neighbPolyPatchID();
+                if (boundaryMesh[neiPatchID].faceCells().found(cellI))
+                {
+                    const cyclicPolyPatch* cpp3 = isA<cyclicPolyPatch>(boundaryMesh[neiPatchID]);
+                    const label localFaceI = faceI - cpp2->start();
+                    const label neighborLocalFaceI = cpp2->neighbPatchFaceLabel(localFaceI);
+                    cpp3->transformPosition(c, neighborLocalFaceI);
+                }
+            }
+        }
+    }
+}
