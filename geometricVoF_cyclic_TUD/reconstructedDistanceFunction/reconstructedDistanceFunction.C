@@ -28,6 +28,7 @@ License
 #include "emptyPolyPatch.H"
 #include "reconstructedDistanceFunction.H"
 #include "processorPolyPatch.H"
+#include "processorCyclicPolyPatch.H"
 #include "syncTools.H"
 #include "unitConversion.H"
 #include "wedgePolyPatch.H"
@@ -422,11 +423,12 @@ void Foam::reconstructedDistanceFunction::updateContactAngle
 // Cyclic Boundaries
 void Foam::reconstructedDistanceFunction::centerTransformation(const label& celli, const label& coupledCelli, point& center)
 {
-     const polyBoundaryMesh& boundaryMesh = mesh_.boundaryMesh();
+    const polyBoundaryMesh& boundaryMesh = mesh_.boundaryMesh();
     
     forAll(boundaryMesh, patchi)
     {
         const cyclicPolyPatch* cpp = isA<cyclicPolyPatch>(boundaryMesh[patchi]);
+        const processorCyclicPolyPatch* pcpp = isA<processorCyclicPolyPatch>(boundaryMesh[patchi]);
         if (cpp)
         {
             label neiPatchID = cpp->neighbPatchID();
@@ -435,6 +437,16 @@ void Foam::reconstructedDistanceFunction::centerTransformation(const label& cell
                 {
                     const label& facei = coupledCelli - boundaryMesh[neiPatchID].start();
                     cpp->transformPosition(center, facei);
+                }
+        }
+        else if (pcpp) 
+        {
+            label neiPatchID = pcpp->neighbPolyPatchID(); // the neighbPolyPatchID() function has to be implemented.
+            if(boundaryMesh[patchi].faceCells().found(celli) && 
+                boundaryMesh[neiPatchID].faceCells().found(coupledCelli))
+                {
+                    const label& facei = coupledCelli - boundaryMesh[neiPatchID].start();
+                    pcpp->transformPosition(center, facei);
                 }
         }
     }
