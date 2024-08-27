@@ -1,0 +1,7 @@
+#!/bin/sh
+echo "Compiling gvof library"
+wmake geometricVoF_cyclic_TUD > log.wmake.geometricVoF
+echo "Compiling solver"
+wmake interIsoFoam_cyclic_TUD > log.wmake.interIsoFoam_cyclic_TUD
+echo "Compilation complete!"
+#------------------------------------------------------------------------------

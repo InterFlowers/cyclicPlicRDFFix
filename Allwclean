@@ -1,0 +1,10 @@
+#!/bin/sh
+echo "Cleaning gvof library"
+wcleanLnIncludeAll geometricVoF_cyclic_TUD 
+echo "Cleaning solver"
+wcleanLnIncludeAll interIsoFoam_cyclic_TUD
+
+rm -rf "log*"
+
+echo "Clean complete!"
+#------------------------------------------------------------------------------
