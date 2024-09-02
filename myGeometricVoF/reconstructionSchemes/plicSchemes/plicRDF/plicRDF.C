@@ -466,7 +466,7 @@ void Foam::reconstruction::plicRDF::reconstruct(bool forceUpdate)
                 exchangeFields,
                 false
             );
-            RDF_.updateContactAngle(alpha1_, U_, nHatb);
+//            RDF_.updateContactAngle(alpha1_, U_, nHatb);
             gradSurf(RDF_);
             calcResidual(normalResidual);
         }

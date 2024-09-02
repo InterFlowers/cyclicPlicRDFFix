@@ -124,7 +124,7 @@ public:
         // If cellI not on cyclic neighbour patch, do nothing to c.
         void transformCyclicPosition
         (
-            point c,
+            point& c,
             const label cellI,
             const label cellJ
         );

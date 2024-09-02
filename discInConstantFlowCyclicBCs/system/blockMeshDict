@@ -17,14 +17,14 @@ FoamFile
 scale   1;
 
 L       1;
-nx      50;
+nx      30;
 
 y1     -.05;
 y2      .05;
 ny      1;
 
 H       1;
-nz      50;
+nz      30;
 
 vertices
 (

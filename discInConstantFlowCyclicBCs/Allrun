@@ -12,6 +12,9 @@ runApplication blockMesh
 
 runApplication setAlphaField
 
+#runApplication decomposePar
+#runParallel $(getApplication)
+
 runApplication $(getApplication)
 
 #------------------------------------------------------------------------------

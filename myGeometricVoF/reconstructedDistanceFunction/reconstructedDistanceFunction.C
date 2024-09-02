@@ -276,7 +276,6 @@ const Foam::volScalarField&  Foam::reconstructedDistanceFunction::constructRDF
                 scalar avgWeight = 0;
                 const point p = mesh_.C()[celli];
 
-                Info << "Cell " << celli << " has stencil " << stencil[celli] << endl;
                 for (const label gblIdx : stencil[celli])
                 {
                     vector n = -distribute.getValue(normal, mapNormal, gblIdx);
@@ -284,7 +283,6 @@ const Foam::volScalarField&  Foam::reconstructedDistanceFunction::constructRDF
                     {
                         n /= mag(n);
                         vector c = distribute.getValue(centre, mapCentres, gblIdx);
-                        transformCyclicPosition(c, celli, gblIdx);
                         vector distanceToIntSeg = (c - p);
                         scalar distToSurf = distanceToIntSeg & (n);
                         scalar weight = 0;
@@ -341,7 +339,6 @@ const Foam::volScalarField&  Foam::reconstructedDistanceFunction::constructRDF
                             n /= mag(n);
                             vector c =
                                 distribute.getValue(centre, mapCentres, gblIdx);
-                            transformCyclicPosition(c, pCellI, gblIdx);
                             vector distanceToIntSeg = (c - p);
                             scalar distToSurf = distanceToIntSeg & (n);
                             scalar weight = 0;
@@ -377,10 +374,7 @@ const Foam::volScalarField&  Foam::reconstructedDistanceFunction::constructRDF
         }
     }
 
-
-// Recalculating RDF in cells that belong to one or more cyclic patches.
-////////////////////////////////////////////////////
-/*
+    // Recalculating RDF in cells that belong to one or more cyclic patches.
     const polyBoundaryMesh& boundaryMesh = mesh_.boundaryMesh();
     
     forAll(boundaryMesh, patchI)
@@ -452,9 +446,6 @@ const Foam::volScalarField&  Foam::reconstructedDistanceFunction::constructRDF
             }
         }
     }
-*/
-
-/////////////////////////////////////////////////////
 
     reconDistFunc.correctBoundaryConditions();
 
@@ -504,7 +495,7 @@ void Foam::reconstructedDistanceFunction::updateContactAngle
 
 void Foam::reconstructedDistanceFunction::transformCyclicPosition
 (
-    point c,
+    point& c,
     const label cellI,
     const label cellJ
 )
@@ -512,6 +503,8 @@ void Foam::reconstructedDistanceFunction::transformCyclicPosition
     // Walk through all faces of cellJ and shift interface centre if
     // cellI and cellJ are point neighbours across one or more 
     // cyclic boundary patches
+    // NOTE: In parallel the line below does not work because cellJ is a GLOBAL
+    // cell index
     const labelList& cellFaces = mesh_.cells()[cellJ];
     forAll(cellFaces, cellFacesLabel)
     {
@@ -525,25 +518,24 @@ void Foam::reconstructedDistanceFunction::transformCyclicPosition
         // Check if faceI is on a cyclic patch
         const polyBoundaryMesh& boundaryMesh = mesh_.boundaryMesh();
         const label patchID = boundaryMesh.patchID(faceI);
-        const cyclicPolyPatch* cpp2 = isA<cyclicPolyPatch>(boundaryMesh[patchID]);
-        if (cpp2)
+        const cyclicPolyPatch* cpp = isA<cyclicPolyPatch>(boundaryMesh[patchID]);
+        if (cpp)
         {
             // If faceI on cyclic patch check if cellI is on the
             // corresponding neighobur patch
-            label neiPatchID = cpp2->neighbPolyPatchID();
+            label neiPatchID = cpp->neighbPolyPatchID();
             if (boundaryMesh[neiPatchID].faceCells().found(cellI))
             {
-                Info << "cellI = " << cellI << " and cellJ = " << cellJ << " are on neighbour cyclic patches." << endl;
+                const cyclicPolyPatch* cpp2 = isA<cyclicPolyPatch>(boundaryMesh[neiPatchID]);
+                // Note: cpp2 is not necessarily equal to cpp!
+                // Note: Assuming same face ordering on cpp and cpp2
+                // Note: localFaceI not used
                 const label localFaceI = faceI - cpp2->start();
-                const cyclicPolyPatch* cpp3 = isA<cyclicPolyPatch>(boundaryMesh[neiPatchID]);
-                // Note: cpp3 is not necessarily equal to cpp!
-                // Note: Assuming same face ordering on cpp2 and cpp3
-                point cCopy = c;
-                cpp3->transformPosition(c, localFaceI);
-                Info << "Interface position before: " << cCopy << " and after: " << c << endl;
+                cpp2->transformPosition(c, localFaceI);
             }
         }
     }
 }
+
 
 // ************************************************************************* //
