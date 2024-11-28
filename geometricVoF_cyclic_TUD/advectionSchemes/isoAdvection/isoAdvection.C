@@ -43,6 +43,8 @@ License
 
 #include "addToRunTimeSelectionTable.H"
 
+#include "processorCyclicPolyPatch.H"
+
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
 namespace Foam
@@ -101,10 +103,12 @@ Foam::isoAdvection::isoAdvection
     writeIsoFacesToFile_(dict_.getOrDefault("writeIsoFaces", false)),
 
     // Cell cutting data
-    surfCells_(label(0.2*mesh_.nCells())),
+    // surfCells_(label(0.2*mesh_.nCells())),
+    surfCells_(label(mesh_.nCells())),
     surf_(reconstructionSchemes::New(alpha1_, phi_, U_, dict_)),
     advectFace_(alpha1.mesh(), alpha1),
-    bsFaces_(label(0.2*mesh_.nBoundaryFaces())),
+    // bsFaces_(label(0.2*mesh_.nBoundaryFaces())),
+    bsFaces_(label(mesh_.nBoundaryFaces())),
     bsx0_(bsFaces_.size()),
     bsn0_(bsFaces_.size()),
     bsUn0_(bsFaces_.size()),
@@ -402,9 +406,21 @@ void Foam::isoAdvection::timeIntegratedFlux()
                 const polyBoundaryMesh& patches = mesh_.boundaryMesh();
                 const polyPatch& pp = patches[patchi];
                 const cyclicPolyPatch* cpp = isA<cyclicPolyPatch>(pp);
+                const processorCyclicPolyPatch* pcpp = isA<processorCyclicPolyPatch>(pp);
+                
+                Info<< "pp = " << pp.name() << ", cpp = " << cpp << ", pcpp = " << pcpp << endl;
+                // Info<< "cpp = " << cpp << ", pcpp = " << pcpp << endl;
+                
                 if (cpp)
                 {
                     label neiPatchID = cpp->neighbPolyPatchID();
+                    dVfb[neiPatchID][patchFacei] = -dVfb[patchi][patchFacei];
+                    Info << "cpp neiPatchID = "  << neiPatchID << endl;
+                }
+                else if (pcpp)
+                {
+                    label neiPatchID = pcpp->referPatchID(); // this here does not return the correct ID since it gives 0 instead of 1. we should implement a similar function to neighbPolyPatchID.
+                    Info << "pcpp neiPatchID = "  << neiPatchID << endl;
                     dVfb[neiPatchID][patchFacei] = -dVfb[patchi][patchFacei];
                 }
                 

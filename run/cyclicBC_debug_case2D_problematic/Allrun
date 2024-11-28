@@ -11,15 +11,11 @@ runApplication blockMesh
 
 runApplication setAlphaField
 
-runApplication decomposePar -cellDist
-
-runParallel interIsoFoam_cyclic_TUD
-
-# runApplication interIsoFoam_cyclic_TUD 
-
-runApplication reconstructPar -cellDist
-
+# runApplication decomposePar -cellDist
+# runParallel interIsoModiFoam
+runApplication interIsoFoam #interIsoFoam_cyclic_TUD  #interFlow #interIsoRhoFoam -tScheme Euler #interFlow
 foamSequenceVTKFiles -vtp
 touch foam.foam
+# $(getApplication)
 
 #------------------------------------------------------------------------------

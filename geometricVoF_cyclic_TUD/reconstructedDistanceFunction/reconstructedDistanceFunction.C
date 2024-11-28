@@ -425,13 +425,21 @@ void Foam::reconstructedDistanceFunction::centerTransformation(const label& cell
 {
     const polyBoundaryMesh& boundaryMesh = mesh_.boundaryMesh();
     
+    // Info << "celli = " << celli << endl;
+
     forAll(boundaryMesh, patchi)
     {
         const cyclicPolyPatch* cpp = isA<cyclicPolyPatch>(boundaryMesh[patchi]);
         const processorCyclicPolyPatch* pcpp = isA<processorCyclicPolyPatch>(boundaryMesh[patchi]);
+        
         if (cpp)
         {
+            
             label neiPatchID = cpp->neighbPatchID();
+            label thisPatchID = cpp->referPatchID();
+            
+            // Info << "The cyclic patch " << cpp << "has a neighbour patch  " << neiPatchID << endl; 
+            
             if(boundaryMesh[patchi].faceCells().found(celli) && 
                 boundaryMesh[neiPatchID].faceCells().found(coupledCelli))
                 {
@@ -439,16 +447,22 @@ void Foam::reconstructedDistanceFunction::centerTransformation(const label& cell
                     cpp->transformPosition(center, facei);
                 }
         }
-        else if (pcpp) 
-        {
-            label neiPatchID = pcpp->neighbPolyPatchID(); // the neighbPolyPatchID() function has to be implemented.
-            if(boundaryMesh[patchi].faceCells().found(celli) && 
-                boundaryMesh[neiPatchID].faceCells().found(coupledCelli))
-                {
-                    const label& facei = coupledCelli - boundaryMesh[neiPatchID].start();
-                    pcpp->transformPosition(center, facei);
-                }
-        }
+        // else if (pcpp) 
+        // {
+        //     label neiPatchID = pcpp->referPatchID(); // the neighbPolyPatchID() function has to be implemented.
+        //     // label neiPatchID = pcpp->neighbPolyPatchID(); // the neighbPolyPatchID() function has to be implemented.
+        //     // Info << "The processor cyclic patch" << cpp << "has a neighbour patch with ID" << neiPatchID << endl;  
+        //     if(boundaryMesh[patchi].faceCells().found(celli) && 
+        //         boundaryMesh[neiPatchID].faceCells().found(coupledCelli))
+        //         {
+        //             const label& facei = coupledCelli - boundaryMesh[neiPatchID].start();
+        //             pcpp->transformPosition(center, facei);
+        //         }
+        // }
+        // else 
+        // {
+        //     Info << "cpp = " << cpp << " pcpp = " << pcpp << endl;  
+        // }
     }
 }
 
